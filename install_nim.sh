@@ -165,29 +165,34 @@ elif [[ "$os" = "Linux" && "$HOSTTYPE" = "x86_64" ]]; then
   curl -sSL "${download_url}" > nim.tar.xz
   tar xf nim.tar.xz
   rm -f nim.tar.xz
-else
-  # need to build compiler
-  download_url="https://nim-lang.org/download/nim-${nim_version}.tar.xz"
-  curl -sSL "${download_url}" > nim.tar.xz
-  tar xf nim.tar.xz
-  rm -f nim.tar.xz
 
-  # homebrew: https://github.com/Homebrew/homebrew-core/blob/736836cf038c04e304e635ccd04dcd0bdff8f57b/Formula/n/nim.rb
-  # nim: https://github.com/nim-lang/Nim/blob/devel/build_all.sh
-  cd "nim-${nim_version}"
+elif [[ "$os" = "macOS" ]]; then
+  if ! command -v brew >/dev/null 2>&1; then
+    err "Homebrew not found. Please install Homebrew first."
+    exit 1
+  fi
 
-  info "build nim compiler"
-  ./build.sh
+  # Try to install a specific version if available, else fallback to latest
+  if brew search nim@"$nim_version" | grep -q "nim@$nim_version"; then
+    info "Installing Nim version $nim_version via Homebrew"
+    brew install nim@"$nim_version"
+    brew link --force --overwrite nim@"$nim_version"
+    nim_bin="/usr/local/opt/nim@${nim_version}/bin/nim"
+    nimble_bin="/usr/local/opt/nim@${nim_version}/bin/nimble"
+  else
+    info "Installing latest Nim via Homebrew (requested $nim_version not found as a versioned formula)"
+    brew install nim
+    nim_bin="$(command -v nim)"
+    nimble_bin="$(command -v nimble)"
+  fi
 
-  info "build koch tool"
-  ./bin/nim c --noNimblePath --skipUserCfg --skipParentCfg --hints:off koch
+  installed_version="$($nim_bin --version | awk '/Version/{print $3; exit}')"
+  info "Using Nim from Homebrew: $installed_version"
 
-  info "koch boot"
-  ./koch boot -d:release --skipUserCfg --skipParentCfg --hints:off
-
-  info "koch tools"
-  ./koch tools --skipUserCfg --skipParentCfg --hints:off
-
-  cd ..
+  mkdir -p "${nim_install_dir}/bin"
+  ln -sfn "$nim_bin" "${nim_install_dir}/bin/nim"
+  [[ -x "$nimble_bin" ]] && ln -sfn "$nimble_bin" "${nim_install_dir}/bin/nimble"
+  [[ -x "/usr/local/bin/nimgrep" ]] && ln -sfn "/usr/local/bin/nimgrep" "${nim_install_dir}/bin/nimgrep"
+  exit
 fi
 move_nim_compiler "nim-${nim_version}" "${nim_install_dir}"
