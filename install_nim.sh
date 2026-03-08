@@ -187,9 +187,6 @@ elif [[ "$os" = "macOS" ]]; then
     nimble_bin="$(command -v nimble)"
   fi
 
-  installed_version="$($nim_bin --version | awk '/Version/{print $3; exit}')"
-  info "Using Nim from Homebrew: $installed_version"
-
   mkdir -p "${nim_install_dir}/bin"
   ln -sfn "$nim_bin" "${nim_install_dir}/bin/nim"
   [[ -x "$nimble_bin" ]] && ln -sfn "$nimble_bin" "${nim_install_dir}/bin/nimble"
