@@ -173,23 +173,32 @@ elif [[ "$os" = "macOS" ]]; then
     exit 1
   fi
 
-  # Try to install a specific version if available, else fallback to latest
-  if brew search nim@"$nim_version" | grep -q "nim@$nim_version"; then
+  # Try exact versioned formula if it exists; otherwise fallback to nim
+  if brew info "nim@${nim_version}" >/dev/null 2>&1; then
     info "Installing Nim version $nim_version via Homebrew"
-    brew install nim@"$nim_version"
-    brew link --force --overwrite nim@"$nim_version"
-    nim_bin="/usr/local/opt/nim@${nim_version}/bin/nim"
-    nimble_bin="/usr/local/opt/nim@${nim_version}/bin/nimble"
+    brew install "nim@${nim_version}"
+    brew link --force --overwrite "nim@${nim_version}"
   else
     info "Installing latest Nim via Homebrew (requested $nim_version not found as a versioned formula)"
     brew install nim
-    nim_bin="$(command -v nim)"
-    nimble_bin="$(command -v nimble)"
   fi
+
+  brew_prefix="$(brew --prefix)"
+  nim_bin="${brew_prefix}/bin/nim"
+  nimble_bin="${brew_prefix}/bin/nimble"
+  nimgrep_bin="${brew_prefix}/bin/nimgrep"
+
+  if [[ ! -x "$nim_bin" ]]; then
+    err "nim binary not found after Homebrew install (expected: $nim_bin)"
+    exit 1
+  fi
+
+  info "Full nim --version output:"
+  "$nim_bin" --version
 
   mkdir -p "${nim_install_dir}/bin"
   ln -sfn "$nim_bin" "${nim_install_dir}/bin/nim"
   [[ -x "$nimble_bin" ]] && ln -sfn "$nimble_bin" "${nim_install_dir}/bin/nimble"
-  [[ -x "/usr/local/bin/nimgrep" ]] && ln -sfn "/usr/local/bin/nimgrep" "${nim_install_dir}/bin/nimgrep"
+  [[ -x "$nimgrep_bin" ]] && ln -sfn "$nimgrep_bin" "${nim_install_dir}/bin/nimgrep"
   exit
 fi
