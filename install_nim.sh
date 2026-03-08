@@ -160,12 +160,13 @@ if [[ "$os" = Windows ]]; then
   curl -sSL "${download_url}" > nim.zip
   unzip -q nim.zip
   rm -f nim.zip
+  move_nim_compiler "nim-${nim_version}" "${nim_install_dir}"
 elif [[ "$os" = "Linux" && "$HOSTTYPE" = "x86_64" ]]; then
   download_url="https://nim-lang.org/download/nim-${nim_version}-linux_${arch}.tar.xz"
   curl -sSL "${download_url}" > nim.tar.xz
   tar xf nim.tar.xz
   rm -f nim.tar.xz
-
+  move_nim_compiler "nim-${nim_version}" "${nim_install_dir}"
 elif [[ "$os" = "macOS" ]]; then
   if ! command -v brew >/dev/null 2>&1; then
     err "Homebrew not found. Please install Homebrew first."
@@ -195,4 +196,3 @@ elif [[ "$os" = "macOS" ]]; then
   [[ -x "/usr/local/bin/nimgrep" ]] && ln -sfn "/usr/local/bin/nimgrep" "${nim_install_dir}/bin/nimgrep"
   exit
 fi
-move_nim_compiler "nim-${nim_version}" "${nim_install_dir}"
